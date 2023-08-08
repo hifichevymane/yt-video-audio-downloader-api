@@ -2,31 +2,26 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from schemas import YouTubeURL
 import os
-from pytube import YouTube
-from random import randint
+import utils
+
 
 app = FastAPI()
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Directory to upload all videos
 UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
 
 
-@app.post('/api/load_video/')
-def load_video(video_url: YouTubeURL):
-    yt = YouTube(video_url.url)
-    video = yt.streams.get_highest_resolution()
-
-    video_title = f'youtube_downloader_py_{randint(1, 100000)}'
-    video_filename = f'{video_title}.mp4'
-    # Creating file path for a video
-    SAVE_FILE_PATH = os.path.join(UPLOAD_DIR, video_filename)
-
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
-
-    # Downloading
-    video.download(output_path=UPLOAD_DIR, filename=video_filename)
-
+# Downloading a video
+@app.post('/api/get_video/')
+def get_video(video_url: YouTubeURL):
+    file_info = utils.download_video(video_url=video_url.url)
     # Returning a download link
-    return FileResponse(path=SAVE_FILE_PATH, filename=video_filename)
+    return FileResponse(path=file_info.path, filename=file_info.name)
+
+
+# Downloading a audio
+@app.post('/api/get_audio/')
+def get_audio(video_url: YouTubeURL):
+    file_info = utils.download_audio(video_url=video_url.url)
+    # Returning a download link
+    return FileResponse(path=file_info.path, filename=file_info.name)
